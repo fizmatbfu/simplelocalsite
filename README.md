@@ -4,6 +4,7 @@ Tool for creating simple text site in local network.
 Requirements: Python 3.5+, Flask
 
 Run: python server.py
+
 Site will be available on your local network on port 5000 (can be changed in server.py).
 
 Adding info: in createhtml.py specify folder for data (kHomeFolderPath). In this folder you can create .txt
