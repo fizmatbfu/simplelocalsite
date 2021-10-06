@@ -1,8 +1,13 @@
 import os
+import re
 
 kHomeFolderPath = 'S:/localSite'
 kTemplateFilePath = 'template.html'
 kTxtExtension = ".txt"
+kFirstColumnMacro = "{FIRST_COLUMN}"
+kSecondColumnMacro = "{SECOND_COLUMN}"
+kTwoColumnsLayout = "<div class=\"row\"><div class=\"column\">" + kFirstColumnMacro + "</div><div class=\"column\">" + kSecondColumnMacro + "</div></div>"
+kMaxLinksForOneColumn = 15
 
 
 def create(path):
@@ -22,13 +27,9 @@ def create(path):
 def createInfoPage(path):
     f = open(path, 'r')
     content = f.read()
-    content = replaceLineBreaks(content)
+    content = re.sub(r"(<img[^>]*>)", "</pre>\\1<pre>", content)
 
     return htmlWrap(content, getTitle(path))
-
-
-def replaceLineBreaks(content):
-    return content.replace("\n", "<p>\n")
 
 
 def htmlWrap(content, title):
@@ -47,16 +48,30 @@ def getTitle(path):
 
 
 def createLinksPage(path):
-    filesList = [f for f in os.listdir(path)]
+    filesList = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path,f)) or os.path.splitext(f)[1] == kTxtExtension]
+    filesList = sorted(filesList)
+    numOfLinksInColumn =  len(filesList) / 2 if len(filesList) > kMaxLinksForOneColumn * 2 else kMaxLinksForOneColumn
+
     links = ""
+    firstColumn = ""
 
-    for f in filesList:
-        if os.path.isdir(os.path.join(path,f)) or os.path.splitext(f)[1] == kTxtExtension:
-            url = createUrl(path, f)
-            title = getTitle(f)
-            links = links + "<p><a href=\"" + url + "\">"+ title + "</a>"
+    for i in range(len(filesList)):
+        url = createUrl(path, filesList[i])
+        title = getTitle(filesList[i])
+        links = links + "<p><a href=\"" + url + "\">" + title + "</a>"
 
-    return htmlWrap(links, getTitle(path))
+        if i > numOfLinksInColumn and firstColumn == "":
+            firstColumn = links
+            links = ""
+
+    layout = ""
+
+    if firstColumn != "":
+        layout = kTwoColumnsLayout.replace(kFirstColumnMacro, firstColumn).replace(kSecondColumnMacro, links)
+    else:
+        layout = links
+
+    return htmlWrap(layout, getTitle(path))
 
 
 def createUrl(path, relativePath):
